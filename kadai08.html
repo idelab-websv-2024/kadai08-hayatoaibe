@@ -1,48 +1,141 @@
-<!DOCTYPE="utf-8">
+<!DOCTYPE html>
+<html>
   <head>
+    <meta charset='utf-8'>
     <title></title>
 
+    <style>
+      body{
+        min-width:350px;
+        font-family: sans-serif;
+      }
+      .inputs{
+        min-width:350px;
+        padding:10% 35%;
+      }
+      .inputs img{
+        padding:10px 16%;
+      }
+      #outputArea{
+        min-width:150px;
+        padding:10%;
+        font-size: 2em;
+      }
+      .content{
+        border:2px solid #000000;
+        margin: 2%;
+        padding:1%;
+        border-radius:5px;
+      }
+      input[type=text]{
+        height:50px;
+        border:3px solid;
+        min-width:250px;
+        border-radius:20px;
+        font-size: large;
+        font-weight: 600;
+        padding:3px;
+
+      }
+      button{
+        height:60px;
+        width:60px;
+        border:5px solid;
+        background: orange;
+        font-weight:bolder;
+        font-size: large;
+        padding:7px;
+        border-radius:50%;
+      }
+      .media img{
+        width:60%;
+        padding: 5%;
+
+      }
+      .media{
+        width:500px;
+        margin:0 3%;
+      }
+      .media audio{
+        padding:0 15px;
+      }
+    </style>
     <script>
     // https://affiliate.itunes.apple.com/resources/documentation/itunes-store-web-service-search-api/#searchexamples
 
     function searchCallback(result) {
-        output = document.getElementById('outputArea');
-        results = result.results;
-        for (var r of results) {
-            var oneline = document.createElement('div');
-            oneline.innerHTML = r["collectionName"];
-            oneline.innerHTML += "<br>";
-            oneline.innerHTML += r["artistName"];
-            oneline.innerHTML += "<hr />";
-            output.appendChild(oneline);
-        }
+      output = document.getElementById('outputArea');
+      results = result.results;
+      for (var r of results) {
+        var oneline = document.createElement('div');
+        var preview = document.createElement('audio');
+        var coverart = document.createElement("img");
+        var media = document.createElement("div");
+        oneline.className = "content";// <div class="content"></div>
+        media.className = "media"; // <div class="media"></div>
+        oneline.innerHTML = `アーティスト: ${r["artistName"]}<br>`
+        oneline.innerHTML += `曲名: <a href="${r["trackViewUrl"]}" target="_blank">${r["trackCensoredName"]}</a>&nbsp;(iTunesのページに飛びます)<br>`;
+        oneline.innerHTML += `アルバム: ${r["collectionName"]}`;
+		    oneline.innerHTML += "<br>";
+		    // oneline.innerHTML += r["artistName"];
+
+        //CoverArt
+        coverart.src = r['artworkUrl100'].replace("100x100","600x600");
+        //CoverArt
+
+        //AUDIO
+        preview.controls = 'controls';
+        preview.src = r['previewUrl'];	
+        //AUDIO
+        media.appendChild(coverart);
+        media.appendChild(preview);
+        oneline.appendChild(media);
+   	    output.appendChild(oneline);
+
+      }
+    }
+    function searchQuery(input){
+      caller = document.getElementById('caller');
+      inputEnc = encodeURIComponent(input);
+      caller.src = `https://itunes.apple.com/search?term=${inputEnc}&lang=ja_JP&country=JP&callback=searchCallback&limit=10`;
     }
 
-    function startRequest() {
-        var statusField = document.getElementById('status');
-        var s = '手嶌';
-        alert(s);
-        var searchString = encodeURIComponent(s);
-        alert(searchString);
-
-        var iTunesURI = 'https://itunes.apple.com/search?term='+searchString+'&callback=searchCallback';
-        document.getElementById('caller').setAttribute('src', iTunesURI);
-
-        statusField.innerHTML = '';
+    function GETQuery(){
+      if(!location.search){ // '' or null = true
+        return false;
+      }
+      isSearch = location.search.indexOf('search='); // 1 ~ 8177 (HTTP GET max length)
+      isSearchTrue = Boolean(Math.sign(isSearch + 1)); // 0 = false, 1 = true
+      if(isSearchTrue){
+        get_array = location.search.substring(isSearch).split('&') // HTTP get to array
+        result = get_array[0].substring(7) // get_array[0] = 'search=keyword', => 'keyword'
+        result = decodeURIComponent(result)
+        return result;
+      } else {
+        return false;
+      }
     }
+
     </script>
 
   </head>
-  
   <body>
-
-<div id='status'></div>
-<div id='outputArea'></div>
-<input type='button' id='searchWord' value='検索' onclick="startRequest()"/>
-
-
+<div class="inputs"><img src="https://www.apple.com/v/itunes/home/l/images/overview/itunes_logo__dwjkvx332d0m_medium_2x.png"><h1>iTunes Music Search</h1><input id="queries" type="text">
+<button onclick="QueryToGET()" type="submit">検索</button></div><div id='status'></div>
+<div id="outputArea"></div>
 <script id='caller'></script>
-
+<script>
+     if(typeof GETQuery() == "string"){ // boolean(false) or string 
+      query = GETQuery();
+      searchQuery(query)
+      document.getElementById("queries").value = query;
+    }
+    function QueryToGET(){
+      value = document.getElementById("queries").value;
+      value = encodeURIComponent(value);
+      location.search = `?search=${value}`
+    }
+</script>
   </body>
 </html>
 
